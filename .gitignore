@@ -5,3 +5,7 @@ __pycache__
 .vscode
 staticfiles
 db.sqlite3
+
+# Firebase & Secrets
+*serviceAccountKey*.json
+secrets/

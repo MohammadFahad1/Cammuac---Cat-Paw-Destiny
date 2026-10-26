@@ -208,3 +208,6 @@ STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='stripe_webhook_
 
 INTERNAL_IPS = config('INTERNAL_IPS', default='127.0.0.1,10.10.29.170', cast=Csv())
 
+# Firebase Configuration
+FIREBASE_CREDENTIALS_PATH = BASE_DIR / config('FIREBASE_CREDENTIALS_PATH', default='serviceAccountKey.json')
+
