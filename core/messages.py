@@ -47,6 +47,19 @@ EXACT_TRANSLATIONS = {
     "User profile retrieved successfully.": "成功获取用户个人信息。",
     "A user with this email already exists.": "具有此电子邮件的用户已存在。",
     
+    # Daily Check-in / Cat Fortune
+    "Daily check-in completed successfully.": "每日签到成功。",
+    "Daily check-in record created successfully.": "每日签到成功。",
+    "Daily activity record created successfully.": "每日签到成功。",
+    "Today's check-in retrieved successfully.": "成功获取今日签到记录。",
+    "Today's record retrieved successfully.": "成功获取今日签到记录。",
+    "No check-in record found for today.": "今日尚未签到。",
+    "No record found for today.": "今日尚未签到。",
+    "You have already checked in today. Check-in is allowed once a day.": "今日已完成签到，每天只能签到一次。",
+    "A record for today already exists. You can only generate once a day.": "今日已完成签到，每天只能签到一次。",
+    "Available check-in choices retrieved successfully.": "成功获取签到可选列表。",
+    "Available choices retrieved successfully.": "成功获取签到可选列表。",
+    
     # Standard DRF
     "This field is required.": "此字段为必填项。",
     "This field may not be blank.": "此字段不能为空。",
