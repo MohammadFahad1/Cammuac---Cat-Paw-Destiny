@@ -11,6 +11,7 @@ FIELD_TRANSLATIONS = {
     'non_field_errors': '非字段错误',
     'detail': '详情',
     'full_name': '姓名',
+    'id_token': 'ID 令牌',
 }
 
 EXACT_TRANSLATIONS = {
@@ -19,6 +20,12 @@ EXACT_TRANSLATIONS = {
     "Email OTP verification successful.": "邮箱验证码验证成功。",
     "Login successful.": "登录成功。",
     "Login successful": "登录成功。",
+    "Google login successful.": "Google 登录成功。",
+    "Google login successful": "Google 登录成功。",
+    "Invalid or expired Firebase token.": "Firebase 令牌无效或已过期。",
+    "Firebase token is invalid or expired.": "Firebase 令牌无效或已过期。",
+    "Firebase ID token does not contain a valid email.": "Firebase ID 令牌不包含有效的电子邮件。",
+    "Firebase service is not configured properly.": "Firebase 服务未正确配置。",
     "User not found.": "用户不存在。",
     "User does not exist.": "用户不存在。",
     "Invalid password.": "密码错误。",

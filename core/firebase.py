@@ -1,7 +1,7 @@
 import os
 import logging
 import firebase_admin
-from firebase_admin import credentials
+from firebase_admin import credentials, auth
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -27,3 +27,14 @@ def get_firebase_app():
         logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
         return None
 
+
+def verify_firebase_id_token(id_token: str) -> dict:
+    """
+    Verifies a Firebase ID token sent from the client.
+    Returns the decoded token payload dictionary on success.
+    Raises ValueError or firebase_admin.exceptions.FirebaseError on failure.
+    """
+    app = get_firebase_app()
+    if not app:
+        raise ValueError("Firebase service is not configured properly.")
+    return auth.verify_id_token(id_token, app=app)

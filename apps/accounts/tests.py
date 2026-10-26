@@ -258,3 +258,75 @@ class AuthenticationAPITests(APITestCase):
         self.assertEqual(res_delete.data["message_eng"], "User account deleted successfully.")
         self.assertEqual(res_delete.data["message_chinese"], "用户账户已成功删除.") if "用户账户已成功删除." in res_delete.data["message_chinese"] else self.assertEqual(res_delete.data["message_chinese"], "用户账户已成功删除。")
         self.assertFalse(User.objects.filter(email=self.email).exists())
+
+    @patch("core.firebase.verify_firebase_id_token")
+    def test_google_login_new_user(self, mock_verify):
+        mock_verify.return_value = {
+            "email": "newgoogleuser@example.com",
+            "email_verified": True
+        }
+        response = self.client.post("/api/v1/auth/google/", {"id_token": "valid_token"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["message_eng"], "Google login successful.")
+        self.assertEqual(response.data["message_chinese"], "Google 登录成功。")
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertEqual(response.data["user"]["email"], "newgoogleuser@example.com")
+
+        user = User.objects.filter(email="newgoogleuser@example.com").first()
+        self.assertIsNotNone(user)
+        self.assertTrue(user.is_active)
+        self.assertEqual(user.status, User.ACTIVE)
+        self.assertFalse(user.has_usable_password())
+
+    @patch("core.firebase.verify_firebase_id_token")
+    def test_google_login_existing_user(self, mock_verify):
+        User.objects.create_user(
+            email=self.email,
+            password=self.password,
+            is_active=True,
+            status=User.ACTIVE
+        )
+        mock_verify.return_value = {
+            "email": self.email,
+            "email_verified": True
+        }
+        response = self.client.post("/api/v1/auth/google/", {"id_token": "valid_token"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["message_eng"], "Google login successful.")
+        self.assertEqual(response.data["message_chinese"], "Google 登录成功。")
+        self.assertEqual(response.data["user"]["email"], self.email)
+
+    @patch("core.firebase.verify_firebase_id_token")
+    def test_google_login_blocked_user(self, mock_verify):
+        User.objects.create_user(
+            email=self.email,
+            password=self.password,
+            is_active=True,
+            status=User.BLOCKED
+        )
+        mock_verify.return_value = {
+            "email": self.email,
+            "email_verified": True
+        }
+        response = self.client.post("/api/v1/auth/google/", {"id_token": "valid_token"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["message_eng"], "User account is blocked.")
+        self.assertEqual(response.data["message_chinese"], "用户账户已被封禁。")
+
+    @patch("core.firebase.verify_firebase_id_token")
+    def test_google_login_invalid_token(self, mock_verify):
+        mock_verify.side_effect = Exception("Firebase ID token verification failed")
+        response = self.client.post("/api/v1/auth/google/", {"id_token": "invalid_token"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["message_eng"], "Invalid or expired Firebase token.")
+        self.assertEqual(response.data["message_chinese"], "Firebase 令牌无效或已过期。")
+
+    @patch("core.firebase.verify_firebase_id_token")
+    def test_google_login_missing_email(self, mock_verify):
+        mock_verify.return_value = {"uid": "12345"}  # No email
+        response = self.client.post("/api/v1/auth/google/", {"id_token": "valid_token_no_email"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["message_eng"], "Firebase ID token does not contain a valid email.")
+        self.assertEqual(response.data["message_chinese"], "Firebase ID 令牌不包含有效的电子邮件。")

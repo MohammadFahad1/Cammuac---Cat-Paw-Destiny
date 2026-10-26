@@ -20,6 +20,7 @@ from accounts.serializers import (
     ResetPasswordSerializer,
     ChangePasswordSerializer,
     UserProfileSerializer,
+    GoogleSignInSerializer,
 )
 
 User = get_user_model()
@@ -908,5 +909,136 @@ class DeleteUserAccountAPIView(NewAPIView):
             en_msg="User account deleted successfully.",
             zh_msg="用户账户已成功删除。",
             status_code=status.HTTP_200_OK
+        )
+
+
+class GoogleSignInAPIView(NewAPIView):
+    serializer_class = GoogleSignInSerializer
+    permission_classes = [AllowAny]
+    http_method_names = ['post']
+
+    @swagger_auto_schema(
+        tags=["Authentication"],
+        request_body=GoogleSignInSerializer
+    )
+    def post(self, request):
+        """
+        **Google Sign-In (Firebase) - Public**
+
+        Authenticates or registers a user via Firebase Google Sign-In using a Firebase ID token.
+        Returns JWT access and refresh tokens along with user information.
+
+        **Method:** `POST`
+        **Endpoint:** `/api/v1/auth/google/`
+        **Authentication:** None (Public)
+
+        **Request Body (JSON):**
+        ```json
+        {
+            "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyMzQ1NiIsInR5cCI6IkpXVCJ9..."
+        }
+        ```
+
+        **Response Body - 200 OK (JSON):**
+        ```json
+        {
+            "success": true,
+            "status_code": 200,
+            "message": {
+                "en": "Google login successful.",
+                "zh": "Google 登录成功。"
+            },
+            "message_eng": "Google login successful.",
+            "message_chinese": "Google 登录成功。",
+            "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "user": {
+                "id": 1,
+                "email": "user@gmail.com",
+                "status": "active",
+                "is_active": true,
+                "is_staff": false,
+                "is_superuser": false,
+                "last_login": "2026-10-26T16:30:00Z",
+                "created_at": "2026-10-26T16:30:00Z",
+                "updated_at": "2026-10-26T16:30:00Z"
+            }
+        }
+        ```
+
+        **Response Body - 400 Bad Request (JSON):**
+        ```json
+        {
+            "success": false,
+            "status_code": 400,
+            "message": {
+                "en": "Invalid or expired Firebase token.",
+                "zh": "Firebase 令牌无效或已过期。"
+            },
+            "message_eng": "Invalid or expired Firebase token.",
+            "message_chinese": "Firebase 令牌无效或已过期。"
+        }
+        ```
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        id_token = serializer.validated_data.get('id_token')
+
+        from core.firebase import verify_firebase_id_token
+        try:
+            decoded_token = verify_firebase_id_token(id_token)
+        except Exception:
+            return self.error_response(
+                "Invalid or expired Firebase token.",
+                "Firebase 令牌无效或已过期。",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        email = decoded_token.get('email')
+        if not email:
+            return self.error_response(
+                "Firebase ID token does not contain a valid email.",
+                "Firebase ID 令牌不包含有效的电子邮件。",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        email = email.lower().strip()
+        user = User.objects.filter(email=email).first()
+
+        if user:
+            if user.status == User.BLOCKED:
+                return self.error_response(
+                    "User account is blocked.",
+                    "用户账户已被封禁。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+            if not user.is_active or user.status == User.INACTIVE:
+                user.is_active = True
+                user.status = User.ACTIVE
+                user.otp = None
+                user.otp_created_at = None
+        else:
+            user = User.objects.create_user(
+                email=email,
+                is_active=True,
+                status=User.ACTIVE
+            )
+            user.set_unusable_password()
+
+        user.last_login = timezone.now()
+        user.save()
+
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
+
+        return self.success_response(
+            en_msg="Google login successful.",
+            zh_msg="Google 登录成功。",
+            status_code=status.HTTP_200_OK,
+            access=str(access),
+            refresh=str(refresh),
+            user=_get_user_profile_data(user, request)
         )
 

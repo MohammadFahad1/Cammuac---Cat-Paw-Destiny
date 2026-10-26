@@ -86,3 +86,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'status', 'is_active', 'is_staff', 'is_superuser', 'created_at', 'updated_at']
         read_only_fields = fields
+
+
+class GoogleSignInSerializer(serializers.Serializer):
+    id_token = serializers.CharField(
+        required=True,
+        help_text="Firebase ID token received from client-side Google sign-in."
+    )
