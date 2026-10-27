@@ -12,6 +12,10 @@ FIELD_TRANSLATIONS = {
     'detail': '详情',
     'full_name': '姓名',
     'id_token': 'ID 令牌',
+    'icon': '图标',
+    'date': '日期',
+    'note': '日记内容',
+    'text': '日记内容',
 }
 
 EXACT_TRANSLATIONS = {
@@ -59,6 +63,14 @@ EXACT_TRANSLATIONS = {
     "A record for today already exists. You can only generate once a day.": "今日已完成签到，每天只能签到一次。",
     "Available check-in choices retrieved successfully.": "成功获取签到可选列表。",
     "Available choices retrieved successfully.": "成功获取签到可选列表。",
+    
+    # My Diary
+    "Diary note created successfully.": "日记创建成功。",
+    "Diary notes retrieved successfully.": "成功获取日记列表。",
+    "Diary note details retrieved successfully.": "成功获取日记详情。",
+    "Diary note not found.": "未找到该日记。",
+    "Diary note updated successfully.": "日记更新成功。",
+    "Diary note deleted successfully.": "日记已成功删除。",
     
     # Standard DRF
     "This field is required.": "此字段为必填项。",

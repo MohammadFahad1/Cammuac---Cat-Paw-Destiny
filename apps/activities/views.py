@@ -261,3 +261,4 @@ class TodayCheckInAPIView(NewAPIView):
             has_record=True,
             data=DailyCheckInSerializer(record).data
         )
+
