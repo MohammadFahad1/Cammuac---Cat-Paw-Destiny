@@ -20,6 +20,20 @@ FIELD_TRANSLATIONS = {
     'sticker': '贴纸',
     'title': '标题',
     'content': '内容',
+    'time': '时间',
+    'period': '时段',
+    'titleZh': '中文标题',
+    'titleEn': '英文标题',
+    'title_zh': '中文标题',
+    'title_en': '英文标题',
+    'repeat': '重复周期',
+    'iconEmoji': '图标表情',
+    'icon_emoji': '图标表情',
+    'bgColor': '背景颜色',
+    'bg_color': '背景颜色',
+    'borderColor': '边框颜色',
+    'border_color': '边框颜色',
+    'enabled': '启用状态',
 }
 
 EXACT_TRANSLATIONS = {
@@ -90,6 +104,14 @@ EXACT_TRANSLATIONS = {
     "Letter not found.": "未找到该信件。",
     "Letter updated successfully.": "信件更新成功。",
     "Letter deleted successfully.": "信件已成功删除。",
+    
+    # Alarms
+    "Alarm created successfully.": "闹钟创建成功。",
+    "Alarms retrieved successfully.": "成功获取闹钟列表。",
+    "Alarm details retrieved successfully.": "成功获取闹钟详情。",
+    "Alarm updated successfully.": "闹钟更新成功。",
+    "Alarm deleted successfully.": "闹钟已成功删除。",
+    "Alarm not found.": "未找到该闹钟。",
     
     # Standard DRF
     "This field is required.": "此字段为必填项。",

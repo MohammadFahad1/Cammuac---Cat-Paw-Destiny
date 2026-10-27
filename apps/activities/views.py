@@ -4,8 +4,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_yasg.utils import swagger_auto_schema
 from core.base import NewAPIView
 from accounts.serializers import EmptySerializer
-from .models import DailyCheckIn
-from .serializers import DailyCheckInSerializer
+from .models import DailyCheckIn, Alarm
+from .serializers import DailyCheckInSerializer, AlarmSerializer, AlarmCreateUpdateSerializer
 from .choices import generate_random_daily_check_in, get_all_choices
 
 class TodayCheckInAPIView(NewAPIView):
@@ -261,4 +261,318 @@ class TodayCheckInAPIView(NewAPIView):
             has_record=True,
             data=DailyCheckInSerializer(record).data
         )
+
+
+class AlarmListCreateAPIView(NewAPIView):
+    serializer_class = AlarmCreateUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post']
+
+    @swagger_auto_schema(
+        tags=['Alarms'],
+        responses={
+            status.HTTP_200_OK: AlarmSerializer(many=True),
+            status.HTTP_401_UNAUTHORIZED: 'Unauthorized'
+        }
+    )
+    def get(self, request):
+        """
+        **List User Alarms - Authenticated Users**
+
+        Retrieves all alarms created by the authenticated user in the required format.
+        Each user only sees their own alarms.
+
+        **Method:** `GET`
+        **Endpoint:** `/api/v1/daily-check-in/alarms/` (also `/api/v1/alarms/` and `/api/v1/activities/alarms/`)
+        **Authentication:** JWT Bearer Token (`IsAuthenticated`)
+        **Headers:** `Authorization: Bearer <access_token>`
+
+        **Request Body:** None
+
+        **Response Body - 200 OK (JSON):**
+        ```json
+        {
+            "success": true,
+            "status_code": 200,
+            "message": {
+                "en": "Alarms retrieved successfully.",
+                "zh": "成功获取闹钟列表。"
+            },
+            "message_eng": "Alarms retrieved successfully.",
+            "message_chinese": "成功获取闹钟列表。",
+            "count": 5,
+            "data": [
+                {
+                    "id": "1",
+                    "time": "04:30",
+                    "period": "PM",
+                    "titleZh": "起床囉！",
+                    "titleEn": "Wake Up!",
+                    "repeat": "每天 Every day",
+                    "iconEmoji": "🌅🐱",
+                    "bgColor": "bg-pink-50",
+                    "borderColor": "border-pink-200",
+                    "enabled": true
+                },
+                {
+                    "id": "2",
+                    "time": "12:00",
+                    "period": "PM",
+                    "titleZh": "午餐時間",
+                    "titleEn": "Lunch Time",
+                    "repeat": "週一 週二 週三 週四 週五 Mon Tue Wed Thu Fri",
+                    "iconEmoji": "🍜🐱",
+                    "bgColor": "bg-amber-50",
+                    "borderColor": "border-amber-200",
+                    "enabled": true
+                }
+            ]
+        }
+        ```
+        """
+        alarms = Alarm.objects.filter(user=request.user).order_by('id')
+        data = AlarmSerializer(alarms, many=True).data
+
+        return self.success_response(
+            en_msg="Alarms retrieved successfully.",
+            zh_msg="成功获取闹钟列表。",
+            status_code=status.HTTP_200_OK,
+            count=len(data),
+            data=data
+        )
+
+    @swagger_auto_schema(
+        tags=['Alarms'],
+        request_body=AlarmCreateUpdateSerializer,
+        responses={
+            status.HTTP_201_CREATED: AlarmSerializer,
+            status.HTTP_400_BAD_REQUEST: 'Bad Request',
+            status.HTTP_401_UNAUTHORIZED: 'Unauthorized'
+        }
+    )
+    def post(self, request):
+        """
+        **Create New Alarm - Authenticated Users**
+
+        Creates a new user-specific alarm. Accepts both camelCase (`titleZh`, `iconEmoji`, etc.)
+        and snake_case (`title_zh`, `icon_emoji`, etc.) in request payloads.
+
+        **Method:** `POST`
+        **Endpoint:** `/api/v1/daily-check-in/alarms/` (also `/api/v1/alarms/` and `/api/v1/activities/alarms/`)
+        **Authentication:** JWT Bearer Token (`IsAuthenticated`)
+        **Headers:** `Authorization: Bearer <access_token>`
+
+        **Request Body (JSON):**
+        ```json
+        {
+            "time": "04:30",
+            "period": "PM",
+            "titleZh": "起床囉！",
+            "titleEn": "Wake Up!",
+            "repeat": "每天 Every day",
+            "iconEmoji": "🌅🐱",
+            "bgColor": "bg-pink-50",
+            "borderColor": "border-pink-200",
+            "enabled": true
+        }
+        ```
+
+        **Response Body - 201 Created (JSON):**
+        ```json
+        {
+            "success": true,
+            "status_code": 201,
+            "message": {
+                "en": "Alarm created successfully.",
+                "zh": "闹钟创建成功。"
+            },
+            "message_eng": "Alarm created successfully.",
+            "message_chinese": "闹钟创建成功。",
+            "data": {
+                "id": "1",
+                "time": "04:30",
+                "period": "PM",
+                "titleZh": "起床囉！",
+                "titleEn": "Wake Up!",
+                "repeat": "每天 Every day",
+                "iconEmoji": "🌅🐱",
+                "bgColor": "bg-pink-50",
+                "borderColor": "border-pink-200",
+                "enabled": true
+            }
+        }
+        ```
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        alarm = serializer.save()
+
+        return self.success_response(
+            en_msg="Alarm created successfully.",
+            zh_msg="闹钟创建成功。",
+            status_code=status.HTTP_201_CREATED,
+            data=AlarmSerializer(alarm).data
+        )
+
+
+class AlarmDetailAPIView(NewAPIView):
+    serializer_class = AlarmCreateUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'put', 'patch', 'delete']
+
+    def _get_alarm(self, request, pk):
+        """
+        Retrieves the alarm strictly belonging to the authenticated user.
+        Ensures complete user isolation.
+        """
+        return Alarm.objects.filter(pk=pk, user=request.user).first()
+
+    @swagger_auto_schema(
+        tags=['Alarms'],
+        responses={
+            status.HTTP_200_OK: AlarmSerializer,
+            status.HTTP_404_NOT_FOUND: 'Alarm not found',
+            status.HTTP_401_UNAUTHORIZED: 'Unauthorized'
+        }
+    )
+    def get(self, request, pk):
+        """
+        **Get Alarm Details - Authenticated Users**
+
+        Retrieves a specific alarm by ID for the authenticated user.
+        Attempts to access another user's alarm will return `404 Not Found`.
+
+        **Method:** `GET`
+        **Endpoint:** `/api/v1/daily-check-in/alarms/<pk>/` (also `/api/v1/alarms/<pk>/`)
+        """
+        alarm = self._get_alarm(request, pk)
+        if not alarm:
+            return self.error_response(
+                "Alarm not found.",
+                "未找到该闹钟。",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        return self.success_response(
+            en_msg="Alarm details retrieved successfully.",
+            zh_msg="成功获取闹钟详情。",
+            status_code=status.HTTP_200_OK,
+            data=AlarmSerializer(alarm).data
+        )
+
+    @swagger_auto_schema(
+        tags=['Alarms'],
+        request_body=AlarmCreateUpdateSerializer,
+        responses={
+            status.HTTP_200_OK: AlarmSerializer,
+            status.HTTP_400_BAD_REQUEST: 'Bad Request',
+            status.HTTP_404_NOT_FOUND: 'Alarm not found'
+        }
+    )
+    def put(self, request, pk):
+        """
+        **Update Entire Alarm - Authenticated Users**
+
+        Replaces all fields of an existing alarm belonging to the authenticated user.
+        Attempts to edit another user's alarm will return `404 Not Found`.
+
+        **Method:** `PUT`
+        **Endpoint:** `/api/v1/daily-check-in/alarms/<pk>/` (also `/api/v1/alarms/<pk>/`)
+        """
+        alarm = self._get_alarm(request, pk)
+        if not alarm:
+            return self.error_response(
+                "Alarm not found.",
+                "未找到该闹钟。",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.get_serializer(alarm, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
+        alarm = serializer.save()
+
+        return self.success_response(
+            en_msg="Alarm updated successfully.",
+            zh_msg="闹钟更新成功。",
+            status_code=status.HTTP_200_OK,
+            data=AlarmSerializer(alarm).data
+        )
+
+    @swagger_auto_schema(
+        tags=['Alarms'],
+        request_body=AlarmCreateUpdateSerializer,
+        responses={
+            status.HTTP_200_OK: AlarmSerializer,
+            status.HTTP_400_BAD_REQUEST: 'Bad Request',
+            status.HTTP_404_NOT_FOUND: 'Alarm not found'
+        }
+    )
+    def patch(self, request, pk):
+        """
+        **Partially Update Alarm (e.g. Toggle Enabled) - Authenticated Users**
+
+        Partially updates an alarm (e.g., toggling `{"enabled": false}`).
+        Attempts to edit another user's alarm will return `404 Not Found`.
+
+        **Method:** `PATCH`
+        **Endpoint:** `/api/v1/daily-check-in/alarms/<pk>/` (also `/api/v1/alarms/<pk>/`)
+
+        **Request Body Example - Toggle enabled (JSON):**
+        ```json
+        {
+            "enabled": false
+        }
+        ```
+        """
+        alarm = self._get_alarm(request, pk)
+        if not alarm:
+            return self.error_response(
+                "Alarm not found.",
+                "未找到该闹钟。",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.get_serializer(alarm, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        alarm = serializer.save()
+
+        return self.success_response(
+            en_msg="Alarm updated successfully.",
+            zh_msg="闹钟更新成功。",
+            status_code=status.HTTP_200_OK,
+            data=AlarmSerializer(alarm).data
+        )
+
+    @swagger_auto_schema(
+        tags=['Alarms'],
+        responses={
+            status.HTTP_200_OK: 'Alarm deleted successfully',
+            status.HTTP_404_NOT_FOUND: 'Alarm not found'
+        }
+    )
+    def delete(self, request, pk):
+        """
+        **Delete Alarm - Authenticated Users**
+
+        Deletes an alarm belonging to the authenticated user.
+        Attempts to delete another user's alarm will return `404 Not Found`.
+
+        **Method:** `DELETE`
+        **Endpoint:** `/api/v1/daily-check-in/alarms/<pk>/` (also `/api/v1/alarms/<pk>/`)
+        """
+        alarm = self._get_alarm(request, pk)
+        if not alarm:
+            return self.error_response(
+                "Alarm not found.",
+                "未找到该闹钟。",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        alarm.delete()
+        return self.success_response(
+            en_msg="Alarm deleted successfully.",
+            zh_msg="闹钟已成功删除。",
+            status_code=status.HTTP_200_OK
+        )
+
 

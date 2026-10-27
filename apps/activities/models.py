@@ -31,3 +31,64 @@ class DailyCheckIn(models.Model):
 
 # Backwards compatibility alias
 DailyActivity = DailyCheckIn
+
+
+class Alarm(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='alarms'
+    )
+    time = models.CharField(
+        max_length=10,
+        help_text="Alarm time in HH:MM format (e.g., '04:30')"
+    )
+    period = models.CharField(
+        max_length=5,
+        choices=[('AM', 'AM'), ('PM', 'PM')],
+        default='AM',
+        help_text="Period (AM or PM)"
+    )
+    title_zh = models.CharField(
+        max_length=100,
+        help_text="Alarm title in Chinese (e.g., '起床囉！')"
+    )
+    title_en = models.CharField(
+        max_length=100,
+        help_text="Alarm title in English (e.g., 'Wake Up!')"
+    )
+    repeat = models.CharField(
+        max_length=100,
+        default="每天 Every day",
+        help_text="Repeat pattern (e.g., '每天 Every day')"
+    )
+    icon_emoji = models.CharField(
+        max_length=50,
+        default="🌅🐱",
+        help_text="Icon and emoji (e.g., '🌅🐱')"
+    )
+    bg_color = models.CharField(
+        max_length=50,
+        default="bg-pink-50",
+        help_text="Background Tailwind color class (e.g., 'bg-pink-50')"
+    )
+    border_color = models.CharField(
+        max_length=50,
+        default="border-pink-200",
+        help_text="Border Tailwind color class (e.g., 'border-pink-200')"
+    )
+    enabled = models.BooleanField(
+        default=True,
+        help_text="Whether the alarm is active"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Alarm'
+        verbose_name_plural = 'Alarms'
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.time} {self.period} ({self.title_en})"
+
