@@ -17,6 +17,9 @@ FIELD_TRANSLATIONS = {
     'note': '日记内容',
     'text': '日记内容',
     'card_number': '卡片编号',
+    'sticker': '贴纸',
+    'title': '标题',
+    'content': '内容',
 }
 
 EXACT_TRANSLATIONS = {
@@ -79,6 +82,14 @@ EXACT_TRANSLATIONS = {
     "No cat tarot record found for today.": "今日尚未抽取猫咪塔罗。",
     "You have already drawn a cat tarot card today. Tarot draw is allowed once a day.": "今日已抽取猫咪塔罗，每天只能抽取一次。",
     "Available tarot choices retrieved successfully.": "成功获取猫咪塔罗可选列表。",
+    
+    # My Letters
+    "Letter saved successfully.": "信件保存成功。",
+    "Letters retrieved successfully.": "成功获取信件列表。",
+    "Letter retrieved successfully.": "成功获取信件详情。",
+    "Letter not found.": "未找到该信件。",
+    "Letter updated successfully.": "信件更新成功。",
+    "Letter deleted successfully.": "信件已成功删除。",
     
     # Standard DRF
     "This field is required.": "此字段为必填项。",
