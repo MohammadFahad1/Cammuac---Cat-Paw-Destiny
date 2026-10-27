@@ -26,4 +26,6 @@ urlpatterns = [
     path('api/v1/auth/', include('accounts.urls')),
     path('api/v1/daily-check-in/', include('activities.urls')),
     path('api/v1/diary/', include('diary.urls')),
+    path('api/v1/tarot/', include('tarot.urls')),
+    path('api/v1/tarot/', include('tarot.urls')),
 ] + debug_toolbar_urls()
