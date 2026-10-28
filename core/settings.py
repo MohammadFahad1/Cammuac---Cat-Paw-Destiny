@@ -32,6 +32,16 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default=['*'], cast=Csv())
 
+# Reverse proxy / Ngrok SSL & Host support
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='https://*.ngrok-free.dev,https://*.ngrok-free.app,https://*.ngrok.io,http://127.0.0.1:8000,http://localhost:8000',
+    cast=Csv()
+)
+
 # Authentication User Model
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -200,10 +210,28 @@ CELERY_TASK_DEFAULT_QUEUE = 'cammuac_queue'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
-if config('DEBUG', default=False):
+if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default=[], cast=Csv())
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.ngrok-free\.(dev|app)$",
+    r"^https://.*\.ngrok\.io$",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+# Swagger / OpenAPI Settings
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+}
 
 # Stripe Configuration
 STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', default='stripe_public_key')
