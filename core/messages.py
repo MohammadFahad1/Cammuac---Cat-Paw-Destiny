@@ -34,6 +34,7 @@ FIELD_TRANSLATIONS = {
     'borderColor': '边框颜色',
     'border_color': '边框颜色',
     'enabled': '启用状态',
+    'day_status': '当日运势状态',
 }
 
 EXACT_TRANSLATIONS = {

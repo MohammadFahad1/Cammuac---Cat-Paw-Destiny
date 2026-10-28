@@ -3,7 +3,9 @@ from .models import User
 from django.contrib.auth.models import Group
 
 admin.site.unregister(Group)
-
+admin.site.site_header = "Cat Paw Destiny Admin"
+admin.site.site_title = "Cat Paw Destiny Admin Portal"
+admin.site.index_title = "Cat Paw Destiny Admin Index"
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('id', 'email', 'status', 'is_superuser', 'is_staff', 'is_active', 'created_at')

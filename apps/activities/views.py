@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_yasg.utils import swagger_auto_schema
 from core.base import NewAPIView
 from accounts.serializers import EmptySerializer
-from .models import DailyCheckIn, Alarm
+from .models import DailyCheckIn, Alarm, DayStatus, DayStatusType, get_day_status_payload
 from .serializers import DailyCheckInSerializer, AlarmSerializer, AlarmCreateUpdateSerializer
 from .choices import generate_random_daily_check_in, get_all_choices
 
@@ -47,6 +47,14 @@ class TodayCheckInAPIView(NewAPIView):
             "message_eng": "Today's check-in retrieved successfully.",
             "message_chinese": "成功获取今日签到记录。",
             "has_record": true,
+            "day_status": {
+                "code": "lucky",
+                "status": "Lucky",
+                "en": "Lucky",
+                "zh": "大吉",
+                "name_en": "Lucky",
+                "name_zh": "大吉"
+            },
             "data": {
                 "id": 1,
                 "date": "2026-10-26",
@@ -54,6 +62,14 @@ class TodayCheckInAPIView(NewAPIView):
                 "month_year": "Oct 2026",
                 "weekday_en": "Mon",
                 "weekday_zh": "星期一",
+                "day_status": {
+                    "code": "lucky",
+                    "status": "Lucky",
+                    "en": "Lucky",
+                    "zh": "大吉",
+                    "name_en": "Lucky",
+                    "name_zh": "大吉"
+                },
                 "good_for": {
                     "en": "Effort, Smiles, Learning",
                     "zh": "努力、微笑、學習",
@@ -99,6 +115,14 @@ class TodayCheckInAPIView(NewAPIView):
             "message_eng": "No check-in record found for today.",
             "message_chinese": "今日尚未签到。",
             "has_record": false,
+            "day_status": {
+                "code": "normal",
+                "status": "Normal",
+                "en": "Normal",
+                "zh": "平",
+                "name_en": "Normal",
+                "name_zh": "平"
+            },
             "data": null
         }
         ```
@@ -120,12 +144,17 @@ class TodayCheckInAPIView(NewAPIView):
         today = timezone.localdate()
         record = DailyCheckIn.objects.filter(user=request.user, date=today).first()
 
+        day_status_obj = DayStatus.objects.filter(date=today).first()
+        status_key = day_status_obj.status if day_status_obj else DayStatusType.NORMAL
+        day_status_data = get_day_status_payload(status_key)
+
         if record:
             return self.success_response(
                 en_msg="Today's check-in retrieved successfully.",
                 zh_msg="成功获取今日签到记录。",
                 status_code=status.HTTP_200_OK,
                 has_record=True,
+                day_status=day_status_data,
                 data=DailyCheckInSerializer(record).data
             )
 
@@ -134,6 +163,7 @@ class TodayCheckInAPIView(NewAPIView):
             zh_msg="今日尚未签到。",
             status_code=status.HTTP_200_OK,
             has_record=False,
+            day_status=day_status_data,
             data=None
         )
 
@@ -181,6 +211,14 @@ class TodayCheckInAPIView(NewAPIView):
             "message_eng": "Daily check-in completed successfully.",
             "message_chinese": "每日签到成功。",
             "has_record": true,
+            "day_status": {
+                "code": "lucky",
+                "status": "Lucky",
+                "en": "Lucky",
+                "zh": "大吉",
+                "name_en": "Lucky",
+                "name_zh": "大吉"
+            },
             "data": {
                 "id": 1,
                 "date": "2026-10-26",
@@ -188,6 +226,14 @@ class TodayCheckInAPIView(NewAPIView):
                 "month_year": "Oct 2026",
                 "weekday_en": "Mon",
                 "weekday_zh": "星期一",
+                "day_status": {
+                    "code": "lucky",
+                    "status": "Lucky",
+                    "en": "Lucky",
+                    "zh": "大吉",
+                    "name_en": "Lucky",
+                    "name_zh": "大吉"
+                },
                 "good_for": {
                     "en": "Effort, Smiles, Learning",
                     "zh": "努力、微笑、學習",
@@ -238,12 +284,17 @@ class TodayCheckInAPIView(NewAPIView):
         today = timezone.localdate()
         existing_record = DailyCheckIn.objects.filter(user=request.user, date=today).first()
 
+        day_status_obj = DayStatus.objects.filter(date=today).first()
+        status_key = day_status_obj.status if day_status_obj else DayStatusType.NORMAL
+        day_status_data = get_day_status_payload(status_key)
+
         if existing_record:
             return self.error_response(
                 "You have already checked in today. Check-in is allowed once a day.",
                 "今日已完成签到，每天只能签到一次。",
                 status_code=status.HTTP_400_BAD_REQUEST,
                 has_record=True,
+                day_status=day_status_data,
                 data=DailyCheckInSerializer(existing_record).data
             )
 
@@ -251,6 +302,7 @@ class TodayCheckInAPIView(NewAPIView):
         record = DailyCheckIn.objects.create(
             user=request.user,
             date=today,
+            day_status=status_key,
             **fortune_data
         )
 
@@ -259,6 +311,7 @@ class TodayCheckInAPIView(NewAPIView):
             zh_msg="每日签到成功。",
             status_code=status.HTTP_201_CREATED,
             has_record=True,
+            day_status=day_status_data,
             data=DailyCheckInSerializer(record).data
         )
 

@@ -1,11 +1,20 @@
 from django.contrib import admin
-from .models import DailyCheckIn, Alarm
+from .models import DailyCheckIn, Alarm, DayStatus
+
+
+@admin.register(DayStatus)
+class DayStatusAdmin(admin.ModelAdmin):
+    list_display = ('id', 'date', 'status', 'note', 'created_at', 'updated_at')
+    list_filter = ('status', 'date')
+    search_fields = ('note',)
+    ordering = ('-date',)
+    date_hierarchy = 'date'
 
 
 @admin.register(DailyCheckIn)
 class DailyCheckInAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'date', 'lucky_number', 'created_at')
-    list_filter = ('date', 'created_at')
+    list_display = ('id', 'user', 'date', 'day_status', 'lucky_number', 'created_at')
+    list_filter = ('day_status', 'date', 'created_at')
     search_fields = ('user__email',)
     ordering = ('-date', '-created_at')
     readonly_fields = ('created_at', 'updated_at')

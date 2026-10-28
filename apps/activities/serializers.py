@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DailyCheckIn, Alarm
+from .models import DailyCheckIn, Alarm, DayStatus, get_day_status_payload, DayStatusType
 
 WEEKDAY_ZH_MAP = {
     0: "星期一",
@@ -17,6 +17,7 @@ class DailyCheckInSerializer(serializers.ModelSerializer):
     month_year = serializers.SerializerMethodField()
     weekday_en = serializers.SerializerMethodField()
     weekday_zh = serializers.SerializerMethodField()
+    day_status = serializers.SerializerMethodField()
 
     class Meta:
         model = DailyCheckIn
@@ -27,6 +28,7 @@ class DailyCheckInSerializer(serializers.ModelSerializer):
             'month_year',
             'weekday_en',
             'weekday_zh',
+            'day_status',
             'good_for',
             'avoid',
             'quote',
@@ -49,6 +51,11 @@ class DailyCheckInSerializer(serializers.ModelSerializer):
 
     def get_weekday_zh(self, obj) -> str:
         return WEEKDAY_ZH_MAP.get(obj.date.weekday(), "")
+
+    def get_day_status(self, obj) -> dict:
+        day_status_obj = DayStatus.objects.filter(date=obj.date).first()
+        status_key = day_status_obj.status if day_status_obj else getattr(obj, 'day_status', DayStatusType.NORMAL) or DayStatusType.NORMAL
+        return get_day_status_payload(status_key)
 
 
 # Backwards compatibility alias

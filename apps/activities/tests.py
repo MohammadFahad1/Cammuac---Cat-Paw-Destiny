@@ -1,11 +1,91 @@
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Alarm
+from .models import DailyCheckIn, Alarm, DayStatus, DayStatusType
 
 User = get_user_model()
+
+
+class DailyCheckInDayStatusAPITests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="fortuneuser@example.com",
+            password="StrongPassword123!",
+            is_active=True,
+            status=User.ACTIVE
+        )
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+        self.today_url = "/api/v1/daily-check-in/today/"
+
+    def test_default_day_status_normal_when_not_in_db(self):
+        # Admin has NOT entered a DayStatus for today -> should default to Normal
+        response = self.client.get(self.today_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data["has_record"])
+        self.assertIn("day_status", response.data)
+
+        day_status = response.data["day_status"]
+        self.assertEqual(day_status["code"], "normal")
+        self.assertEqual(day_status["status"], "Normal")
+        self.assertEqual(day_status["zh"], "平")
+
+    def test_admin_configured_lucky_day_status(self):
+        today = timezone.localdate()
+        # Admin manually enters today as Lucky in admin
+        DayStatus.objects.create(date=today, status=DayStatusType.LUCKY)
+
+        response = self.client.get(self.today_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        day_status = response.data["day_status"]
+        self.assertEqual(day_status["code"], "lucky")
+        self.assertEqual(day_status["status"], "Lucky")
+        self.assertEqual(day_status["zh"], "大吉")
+
+    def test_admin_configured_bad_luck_day_status(self):
+        today = timezone.localdate()
+        # Admin manually enters today as Bad Luck in admin
+        DayStatus.objects.create(date=today, status=DayStatusType.BAD_LUCK)
+
+        response = self.client.get(self.today_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        day_status = response.data["day_status"]
+        self.assertEqual(day_status["code"], "bad_luck")
+        self.assertEqual(day_status["status"], "Bad Luck")
+        self.assertEqual(day_status["zh"], "凶")
+
+    def test_post_check_in_reflects_and_saves_day_status(self):
+        today = timezone.localdate()
+        # Admin set today as Lucky
+        DayStatus.objects.create(date=today, status=DayStatusType.LUCKY)
+
+        post_res = self.client.post(self.today_url, {}, format="json")
+        self.assertEqual(post_res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(post_res.data["has_record"])
+
+        # Check top-level day_status
+        self.assertEqual(post_res.data["day_status"]["code"], "lucky")
+        self.assertEqual(post_res.data["day_status"]["status"], "Lucky")
+
+        # Check data.day_status inside checkin payload
+        data = post_res.data["data"]
+        self.assertIn("day_status", data)
+        self.assertEqual(data["day_status"]["code"], "lucky")
+        self.assertEqual(data["day_status"]["status"], "Lucky")
+
+        # Verify DB checkin model has day_status recorded
+        record = DailyCheckIn.objects.get(user=self.user, date=today)
+        self.assertEqual(record.day_status, "lucky")
+
+        # Now GET should also return the Lucky day_status inside data and root
+        get_res = self.client.get(self.today_url)
+        self.assertEqual(get_res.status_code, status.HTTP_200_OK)
+        self.assertTrue(get_res.data["has_record"])
+        self.assertEqual(get_res.data["day_status"]["status"], "Lucky")
+        self.assertEqual(get_res.data["data"]["day_status"]["status"], "Lucky")
 
 
 class AlarmAPITests(APITestCase):
@@ -19,8 +99,7 @@ class AlarmAPITests(APITestCase):
         refresh = RefreshToken.for_user(self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
-        self.list_create_url = "/api/v1/alarms/"
-        self.daily_checkin_alarms_url = "/api/v1/daily-check-in/alarms/"
+        self.list_create_url = "/api/v1/daily-check-in/alarms/"
 
     def test_list_alarms_initially_empty(self):
         response = self.client.get(self.list_create_url)
@@ -217,11 +296,6 @@ class AlarmAPITests(APITestCase):
         other_alarm.refresh_from_db()
         self.assertTrue(other_alarm.enabled)
 
-    def test_daily_checkin_alias_route(self):
-        # Verify route via /api/v1/daily-check-in/alarms/
-        res = self.client.get(self.daily_checkin_alarms_url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
     def test_unauthenticated_requests_rejected(self):
         self.client.credentials()  # Clear auth
         res_get = self.client.get(self.list_create_url)
@@ -229,4 +303,3 @@ class AlarmAPITests(APITestCase):
 
         res_post = self.client.post(self.list_create_url, {"time": "04:30"})
         self.assertEqual(res_post.status_code, status.HTTP_401_UNAUTHORIZED)
-
