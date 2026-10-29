@@ -82,6 +82,9 @@ EXACT_TRANSLATIONS = {
     "A record for today already exists. You can only generate once a day.": "今日已完成签到，每天只能签到一次。",
     "Available check-in choices retrieved successfully.": "成功获取签到可选列表。",
     "Available choices retrieved successfully.": "成功获取签到可选列表。",
+    "Calendar data retrieved successfully.": "成功获取日历数据。",
+    "Invalid year format. Must be an integer between 2000 and 2100.": "年份格式无效，必须在 2000 至 2100 之间。",
+    "Invalid month format. Must be an integer between 1 and 12.": "月份格式无效，必须在 1 至 12 之间。",
     
     # My Diary
     "Diary note created successfully.": "日记创建成功。",

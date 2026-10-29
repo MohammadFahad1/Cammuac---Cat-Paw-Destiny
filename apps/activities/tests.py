@@ -303,3 +303,78 @@ class AlarmAPITests(APITestCase):
 
         res_post = self.client.post(self.list_create_url, {"time": "04:30"})
         self.assertEqual(res_post.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class CalendarAPITests(APITestCase):
+    def setUp(self):
+        self.calendar_url = "/api/v1/daily-check-in/calendar/"
+        # Ensure test records in DayStatus for October 2026
+        from datetime import date
+        DayStatus.objects.update_or_create(
+            date=date(2026, 10, 3),
+            defaults={'status': DayStatusType.LUCKY, 'note': '吉 (Lucky)'}
+        )
+        DayStatus.objects.update_or_create(
+            date=date(2026, 10, 5),
+            defaults={'status': DayStatusType.BAD_LUCK, 'note': '凶 (Bad Luck)'}
+        )
+        DayStatus.objects.update_or_create(
+            date=date(2026, 10, 1),
+            defaults={'status': DayStatusType.NORMAL, 'note': '平 (Normal)'}
+        )
+
+    def test_get_calendar_default_range(self):
+        response = self.client.get(self.calendar_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        self.assertIn("calendar_en", response.data)
+        self.assertIn("calendar_zh", response.data)
+        self.assertIn("data", response.data)
+
+        # Check default range covers 2026 to 2030
+        years = list(response.data["calendar_en"].keys())
+        self.assertIn("2026", years)
+        self.assertIn("2030", years)
+
+    def test_get_calendar_specific_year_and_month(self):
+        response = self.client.get(f"{self.calendar_url}?year=2026&month=10")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        calendar_en = response.data["calendar_en"]
+        calendar_zh = response.data["calendar_zh"]
+
+        self.assertEqual(list(calendar_en.keys()), ["2026"])
+        self.assertEqual(list(calendar_en["2026"].keys()), ["10"])
+
+        # Check day statuses
+        self.assertEqual(calendar_en["2026"]["10"]["1"], "Ping")
+        self.assertEqual(calendar_zh["2026"]["10"]["1"], "平")
+
+        self.assertEqual(calendar_en["2026"]["10"]["3"], "Ji")
+        self.assertEqual(calendar_zh["2026"]["10"]["3"], "吉")
+
+        self.assertEqual(calendar_en["2026"]["10"]["5"], "Xiong")
+        self.assertEqual(calendar_zh["2026"]["10"]["5"], "凶")
+
+    def test_get_calendar_language_filters(self):
+        res_en = self.client.get(f"{self.calendar_url}?year=2026&month=10&lang=en")
+        self.assertEqual(res_en.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_en.data["data"]["2026"]["10"]["3"], "Ji")
+
+        res_zh = self.client.get(f"{self.calendar_url}?year=2026&month=10&lang=zh")
+        self.assertEqual(res_zh.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_zh.data["data"]["2026"]["10"]["3"], "吉")
+
+    def test_get_calendar_invalid_parameters(self):
+        # Invalid year
+        res_bad_year = self.client.get(f"{self.calendar_url}?year=abcd")
+        self.assertEqual(res_bad_year.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res_bad_year.data["message_eng"], "Invalid year format. Must be an integer between 2000 and 2100.")
+        self.assertEqual(res_bad_year.data["message_chinese"], "年份格式无效，必须在 2000 至 2100 之间。")
+
+        # Invalid month
+        res_bad_month = self.client.get(f"{self.calendar_url}?year=2026&month=15")
+        self.assertEqual(res_bad_month.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res_bad_month.data["message_eng"], "Invalid month format. Must be an integer between 1 and 12.")
+        self.assertEqual(res_bad_month.data["message_chinese"], "月份格式无效，必须在 1 至 12 之间。")
+

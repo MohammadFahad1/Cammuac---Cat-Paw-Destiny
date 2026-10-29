@@ -2,11 +2,13 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from core.base import NewAPIView
 from accounts.serializers import EmptySerializer
-from .models import DailyCheckIn, Alarm, DayStatus, DayStatusType, get_day_status_payload
+from .models import DailyCheckIn, Alarm, DayStatus, DayStatusType, get_day_status_payload, get_calendar_status_info
 from .serializers import DailyCheckInSerializer, AlarmSerializer, AlarmCreateUpdateSerializer
 from .choices import generate_random_daily_check_in, get_all_choices
+from .calendar_generator import build_calendar_response_data
 
 class TodayCheckInAPIView(NewAPIView):
     serializer_class = EmptySerializer
@@ -626,6 +628,252 @@ class AlarmDetailAPIView(NewAPIView):
             en_msg="Alarm deleted successfully.",
             zh_msg="闹钟已成功删除。",
             status_code=status.HTTP_200_OK
+        )
+
+
+class CalendarAPIView(NewAPIView):
+    serializer_class = EmptySerializer
+    permission_classes = [AllowAny]
+    http_method_names = ['get']
+
+    @swagger_auto_schema(
+        tags=['Daily Check-in'],
+        manual_parameters=[
+            openapi.Parameter(
+                'year',
+                openapi.IN_QUERY,
+                description="Specific calendar year (e.g. 2026)",
+                type=openapi.TYPE_INTEGER,
+                required=False
+            ),
+            openapi.Parameter(
+                'month',
+                openapi.IN_QUERY,
+                description="Specific month 1-12 (used when year is specified)",
+                type=openapi.TYPE_INTEGER,
+                required=False
+            ),
+            openapi.Parameter(
+                'start_year',
+                openapi.IN_QUERY,
+                description="Start year for calendar range (default: 2026)",
+                type=openapi.TYPE_INTEGER,
+                required=False
+            ),
+            openapi.Parameter(
+                'end_year',
+                openapi.IN_QUERY,
+                description="End year for calendar range (default: 2030)",
+                type=openapi.TYPE_INTEGER,
+                required=False
+            ),
+            openapi.Parameter(
+                'lang',
+                openapi.IN_QUERY,
+                description="Language code: 'en' for English format (Ji, Ping, Xiong) or 'zh' for Chinese format (吉, 平, 凶)",
+                type=openapi.TYPE_STRING,
+                required=False
+            ),
+        ],
+        responses={
+            status.HTTP_200_OK: 'Calendar data retrieved successfully',
+            status.HTTP_400_BAD_REQUEST: 'Invalid parameters',
+        }
+    )
+    def get(self, request):
+        """
+        **Get Calendar Day Statuses (2025 - 2030) - Public & Authenticated**
+
+        Returns the day-by-day status calendar managed from the backend database (`DayStatus`).
+        Provides both English format (`Ji`, `Ping`, `Xiong`) and Chinese format (`吉`, `平`, `凶`),
+        as well as detailed bilingual objects per day.
+
+        **Method:** `GET`
+        **Endpoint:** `/api/v1/daily-check-in/calendar/`
+        **Authentication:** Optional (`AllowAny`)
+
+        **Query Parameters:**
+        - `year` (optional): Filter to a specific year (e.g. `?year=2026`)
+        - `month` (optional): Filter to a specific month 1-12 (e.g. `?year=2026&month=10`)
+        - `start_year` (optional): Custom range start year (default: `2026`)
+        - `end_year` (optional): Custom range end year (default: `2030`)
+        - `lang` (optional): `'en'` or `'zh'` to simplify the `data` payload to that language
+
+        **Response Body - 200 OK (Full Bilingual Calendar):**
+        ```json
+        {
+            "success": true,
+            "status_code": 200,
+            "message": {
+                "en": "Calendar data retrieved successfully.",
+                "zh": "成功获取日历数据。"
+            },
+            "message_eng": "Calendar data retrieved successfully.",
+            "message_chinese": "成功获取日历数据。",
+            "calendar_en": {
+                "2026": {
+                    "10": {
+                        "1": "Ping", "2": "Ping", "3": "Ji", "4": "Ping", "5": "Xiong",
+                        "6": "Ji", "7": "Ping", "8": "Xiong", "9": "Xiong", "10": "Ping",
+                        "11": "Ji", "12": "Ping", "13": "Ji", "14": "Ping", "15": "Ping",
+                        "16": "Ping", "17": "Xiong", "18": "Ping", "19": "Ping", "20": "Ji",
+                        "21": "Xiong", "22": "Ping", "23": "Ji", "24": "Ping", "25": "Ji",
+                        "26": "Ping", "27": "Ping", "28": "Xiong", "29": "Xiong", "30": "Ping", "31": "Ping"
+                    },
+                    "11": {
+                        "1": "Ji", "2": "Xiong", "3": "Ping", "4": "Ji", "5": "Ping",
+                        "6": "Xiong", "7": "Ping", "8": "Ping", "9": "Ping", "10": "Xiong",
+                        "11": "Ping", "12": "Ping", "13": "Ping", "14": "Ping", "15": "Xiong",
+                        "16": "Ji", "17": "Ji", "18": "Ping", "19": "Ping", "20": "Ping",
+                        "21": "Ping", "22": "Xiong", "23": "Ping", "24": "Ji", "25": "Ji",
+                        "26": "Ping", "27": "Xiong", "28": "Ping", "29": "Ji", "30": "Ping"
+                    },
+                    "12": {
+                        "1": "Ping", "2": "Ping", "3": "Ping", "4": "Xiong", "5": "Ping",
+                        "6": "Ji", "7": "Ping", "8": "Ji", "9": "Ping", "10": "Xiong",
+                        "11": "Ping", "12": "Ji", "13": "Ping", "14": "Ji", "15": "Ping",
+                        "16": "Xiong", "17": "Ji", "18": "Ji", "19": "Ping", "20": "Ji",
+                        "21": "Xiong", "22": "Xiong", "23": "Ping", "24": "Ji", "25": "Ping",
+                        "26": "Ping", "27": "Xiong", "28": "Xiong", "29": "Ji", "30": "Ping", "31": "Ping"
+                    }
+                }
+            },
+            "calendar_zh": {
+                "2026": {
+                    "10": {
+                        "1": "平", "2": "平", "3": "吉", "4": "平", "5": "凶",
+                        "6": "吉", "7": "平", "8": "凶", "9": "凶", "10": "平",
+                        "11": "吉", "12": "平", "13": "吉", "14": "平", "15": "平",
+                        "16": "平", "17": "凶", "18": "平", "19": "平", "20": "吉",
+                        "21": "凶", "22": "平", "23": "吉", "24": "平", "25": "吉",
+                        "26": "平", "27": "平", "28": "凶", "29": "凶", "30": "平", "31": "平"
+                    },
+                    "11": {
+                        "1": "吉", "2": "凶", "3": "平", "4": "吉", "5": "平",
+                        "6": "凶", "7": "平", "8": "平", "9": "平", "10": "凶",
+                        "11": "平", "12": "平", "13": "平", "14": "平", "15": "凶",
+                        "16": "吉", "17": "吉", "18": "平", "19": "平", "20": "平",
+                        "21": "平", "22": "凶", "23": "平", "24": "吉", "25": "吉",
+                        "26": "平", "27": "凶", "28": "平", "29": "吉", "30": "平"
+                    },
+                    "12": {
+                        "1": "平", "2": "平", "3": "平", "4": "凶", "5": "平",
+                        "6": "吉", "7": "平", "8": "吉", "9": "平", "10": "凶",
+                        "11": "平", "12": "吉", "13": "平", "14": "吉", "15": "平",
+                        "16": "凶", "17": "吉", "18": "吉", "19": "平", "20": "吉",
+                        "21": "凶", "22": "凶", "23": "平", "24": "吉", "25": "平",
+                        "26": "平", "27": "凶", "28": "凶", "29": "吉", "30": "平", "31": "平"
+                    }
+                }
+            },
+            "data": {
+                "en": { "2026": { "10": { "1": "Ping", "2": "Ping", ... } } },
+                "zh": { "2026": { "10": { "1": "平", "2": "平", ... } } },
+                "calendar_en": { "2026": { "10": { "1": "Ping", "2": "Ping", ... } } },
+                "calendar_zh": { "2026": { "10": { "1": "平", "2": "平", ... } } },
+                "bilingual": {
+                    "2026": {
+                        "10": {
+                            "1": {
+                                "en": "Ping",
+                                "zh": "平",
+                                "code": "normal",
+                                "status_en": "Normal",
+                                "status_zh": "平"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        ```
+        """
+        year_param = request.query_params.get('year')
+        month_param = request.query_params.get('month')
+        start_year_param = request.query_params.get('start_year')
+        end_year_param = request.query_params.get('end_year')
+        lang_param = (request.query_params.get('lang') or '').lower().strip()
+
+        year = None
+        month = None
+        start_year = None
+        end_year = None
+
+        if year_param is not None:
+            try:
+                year = int(year_param)
+                if not (2000 <= year <= 2100):
+                    raise ValueError
+            except ValueError:
+                return self.error_response(
+                    "Invalid year format. Must be an integer between 2000 and 2100.",
+                    "年份格式无效，必须在 2000 至 2100 之间。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+        if month_param is not None:
+            try:
+                month = int(month_param)
+                if not (1 <= month <= 12):
+                    raise ValueError
+            except ValueError:
+                return self.error_response(
+                    "Invalid month format. Must be an integer between 1 and 12.",
+                    "月份格式无效，必须在 1 至 12 之间。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+        if start_year_param is not None:
+            try:
+                start_year = int(start_year_param)
+                if not (2000 <= start_year <= 2100):
+                    raise ValueError
+            except ValueError:
+                return self.error_response(
+                    "Invalid year format. Must be an integer between 2000 and 2100.",
+                    "年份格式无效，必须在 2000 至 2100 之间。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+        if end_year_param is not None:
+            try:
+                end_year = int(end_year_param)
+                if not (2000 <= end_year <= 2100):
+                    raise ValueError
+            except ValueError:
+                return self.error_response(
+                    "Invalid year format. Must be an integer between 2000 and 2100.",
+                    "年份格式无效，必须在 2000 至 2100 之间。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+        calendar_en, calendar_zh, calendar_bilingual = build_calendar_response_data(
+            start_year=start_year,
+            end_year=end_year,
+            year=year,
+            month=month,
+        )
+
+        if lang_param == 'en':
+            data_payload = calendar_en
+        elif lang_param == 'zh':
+            data_payload = calendar_zh
+        else:
+            data_payload = {
+                'en': calendar_en,
+                'zh': calendar_zh,
+                'calendar_en': calendar_en,
+                'calendar_zh': calendar_zh,
+                'bilingual': calendar_bilingual,
+            }
+
+        return self.success_response(
+            en_msg="Calendar data retrieved successfully.",
+            zh_msg="成功获取日历数据。",
+            status_code=status.HTTP_200_OK,
+            calendar_en=calendar_en,
+            calendar_zh=calendar_zh,
+            data=data_payload
         )
 
 

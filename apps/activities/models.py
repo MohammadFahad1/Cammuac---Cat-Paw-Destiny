@@ -48,6 +48,43 @@ def get_day_status_payload(status_key: str) -> dict:
     return DAY_STATUS_MAP.get(key, DAY_STATUS_MAP['normal'])
 
 
+STATUS_TO_PINYIN = {
+    'lucky': 'Ji',
+    'normal': 'Ping',
+    'bad_luck': 'Xiong',
+}
+
+STATUS_TO_ZH = {
+    'lucky': '吉',
+    'normal': '平',
+    'bad_luck': '凶',
+}
+
+STATUS_TO_FULL_EN = {
+    'lucky': 'Lucky',
+    'normal': 'Normal',
+    'bad_luck': 'Bad Luck',
+}
+
+STATUS_TO_FULL_ZH = {
+    'lucky': '大吉',
+    'normal': '平',
+    'bad_luck': '凶',
+}
+
+
+def get_calendar_status_info(status_key: str) -> dict:
+    payload = get_day_status_payload(status_key)
+    code = payload['code']
+    return {
+        'code': code,
+        'en': STATUS_TO_PINYIN.get(code, 'Ping'),
+        'zh': STATUS_TO_ZH.get(code, '平'),
+        'status_en': STATUS_TO_FULL_EN.get(code, 'Normal'),
+        'status_zh': STATUS_TO_FULL_ZH.get(code, '平'),
+    }
+
+
 class DayStatus(models.Model):
     date = models.DateField(
         unique=True,
