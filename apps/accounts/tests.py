@@ -99,6 +99,27 @@ class AuthenticationAPITests(APITestCase):
         self.assertEqual(user.status, User.ACTIVE)
         self.assertIsNone(user.otp)
 
+    def test_verify_email_otp_bypass_code_111111(self):
+        user = User.objects.create_user(
+            email="bypass_user@example.com",
+            password="Password123!",
+            is_active=False,
+            status=User.INACTIVE,
+            otp=654321,
+            otp_created_at=timezone.now()
+        )
+
+        # Using hardcoded test bypass code 111111
+        res_bypass = self.client.post(self.verify_otp_url, {"email": user.email, "otp": "111111"}, format="json")
+        self.assertEqual(res_bypass.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_bypass.data["success"])
+        self.assertEqual(res_bypass.data["message"]["en"], "Email OTP verification successful.")
+
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertEqual(user.status, User.ACTIVE)
+        self.assertIsNone(user.otp)
+
     def test_login_flow(self):
         user = User.objects.create_user(
             email=self.email,
@@ -177,6 +198,35 @@ class AuthenticationAPITests(APITestCase):
         # Verify login with new password
         user.refresh_from_db()
         self.assertTrue(user.check_password(new_password))
+
+    @patch("accounts.tasks.send_otp_email_task.delay")
+    def test_forgot_password_verify_otp_bypass_code_111111(self, mock_send_email):
+        user = User.objects.create_user(
+            email="forgot_bypass@example.com",
+            password="OldPassword123!",
+            is_active=True,
+            status=User.ACTIVE
+        )
+
+        self.client.post(self.forgot_password_url, {"email": user.email}, format="json")
+        user.refresh_from_db()
+        self.assertNotEqual(str(user.otp), "111111")
+
+        # Verify using bypass code 111111
+        res_verify = self.client.post(self.forgot_verify_otp_url, {"email": user.email, "otp": "111111"}, format="json")
+        self.assertEqual(res_verify.status_code, status.HTTP_200_OK)
+        self.assertIn("reset_token", res_verify.data)
+
+        # Ensure reset_token can reset password
+        new_pwd = "BrandNewPassword123!@#"
+        res_reset = self.client.post(self.reset_password_url, {
+            "email": user.email,
+            "reset_token": res_verify.data["reset_token"],
+            "new_password": new_pwd
+        }, format="json")
+        self.assertEqual(res_reset.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertTrue(user.check_password(new_pwd))
 
     def test_change_password(self):
         user = User.objects.create_user(

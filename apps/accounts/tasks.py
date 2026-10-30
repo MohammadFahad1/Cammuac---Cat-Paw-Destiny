@@ -10,12 +10,13 @@ def send_otp_email_task(email, otp, purpose="Activation"):
     """
     Celery task to send account verification OTP via HTML email template.
     """
-    subject = f"Cammuac - Cat Paw Destiny - {purpose} Verification Code"
-    from_email = (
+    subject = f"Paw - {purpose} Verification Code"
+    raw_from = (
         getattr(settings, 'DEFAULT_FROM_EMAIL', None)
         or getattr(settings, 'EMAIL_HOST_USER', None)
-        or 'noreply@cammuac.com'
+        or 'noreply@paw.app'
     )
+    from_email = f"Paw <{raw_from}>" if raw_from and '<' not in raw_from else (raw_from or 'Paw <noreply@paw.app>')
 
     context = {
         'otp': otp,
@@ -25,7 +26,7 @@ def send_otp_email_task(email, otp, purpose="Activation"):
     }
 
     html_message = render_to_string('otp_template.html', context)
-    plain_message = f"Your Cammuac - Cat Paw Destiny verification code is {otp}. It is valid for 15 minutes."
+    plain_message = f"Your Paw verification code is {otp}. It is valid for 15 minutes."
 
     send_mail(
         subject=subject,

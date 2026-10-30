@@ -1,62 +1,110 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Your Email - Cammuac</title>
+    <title>Verify Your Email - Paw</title>
+    <!--[if mso]>
+    <style type="text/css">
+        body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
+    </style>
+    <![endif]-->
     <style>
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
         table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
         img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
-        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #475569; }
-        .main-container { max-width: 600px; margin: 0 auto; width: 100%; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            background-color: #FAF4EC;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #3D282B;
+        }
     </style>
 </head>
-<body style="background-color: #f4f7f6; margin: 0 !important; padding: 0 !important; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding: 40px 0;">
+<body style="margin: 0 !important; padding: 0 !important; background-color: #FAF4EC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #3D282B;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FAF4EC; padding: 40px 15px;">
         <tr>
             <td align="center">
                 <!-- Main Container -->
-                <table class="main-container" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #FFFFFF; border-radius: 24px; overflow: hidden; border: 1px solid #F5E6D8; box-shadow: 0 12px 36px rgba(220, 140, 150, 0.08);">
                     
-                    <!-- Header -->
+                    <!-- Header with Warm Peach-Pink Gradient -->
                     <tr>
-                        <td class="header" align="center" style="background: linear-gradient(135deg, #06959c 0%, #046d72 100%); padding: 40px 30px; text-align: center;">
-                            <div style="background-color: rgba(255,255,255,0.2); width: 64px; height: 64px; border-radius: 50%; line-height: 64px; text-align: center; margin: 0 auto 15px auto; font-size: 30px;">✉️</div>
-                            <h2 class="branding" style="font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; margin: 0;">Cammuac</h2>
+                        <td align="center" style="background: linear-gradient(135deg, #FFF3E6 0%, #FFE6EC 100%); padding: 36px 24px 28px 24px; text-align: center; border-bottom: 1px solid #F8E3DE;">
+                            <!-- Circular Golden Paw Badge -->
+                            <table border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto 12px auto;">
+                                <tr>
+                                    <td align="center" style="width: 60px; height: 60px; background: linear-gradient(135deg, #F5B041 0%, #E59828 100%); border-radius: 50%; box-shadow: 0 6px 16px rgba(229, 152, 40, 0.35); text-align: center; vertical-align: middle; font-size: 28px; line-height: 60px;">
+                                        🐾
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Project Brand Name -->
+                            <h2 style="font-size: 26px; font-weight: 800; color: #3D282B; letter-spacing: 1px; margin: 0 0 6px 0;">Paw</h2>
+                            
+                            <!-- Badge -->
+                            <span style="display: inline-block; background-color: #FFFFFF; color: #E84A6F; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 14px; border-radius: 20px; border: 1px solid #FFD0DA;">
+                                Security Verification
+                            </span>
                         </td>
                     </tr>
                     
-                    <!-- Content -->
+                    <!-- Main Body Content -->
                     <tr>
-                        <td class="content" style="padding: 45px 40px; font-size: 16px; line-height: 1.6; color: #475569;">
-                            <h1 style="color: #0f172a; font-size: 24px; margin-top: 0; font-weight: 700; text-align: center;">Verify Your Email Address</h1>
-                            <p style="text-align: center; margin-bottom: 30px; color: #475569;">
+                        <td style="padding: 38px 36px 28px 36px;">
+                            <!-- Title -->
+                            <h1 style="color: #3D282B; font-size: 22px; font-weight: 700; text-align: center; margin: 0 0 14px 0;">
+                                Verify Your Email Address
+                            </h1>
+                            
+                            <!-- Description Message -->
+                            <p style="text-align: center; margin: 0 0 28px 0; font-size: 15px; line-height: 1.6; color: #6E585B;">
                             {% if purpose == "Activation" or not purpose %}
-                                Thank you for getting started with Cammuac - Cat Paw Destiny! We just need to verify your email address to complete your registration.
-                            {% elif purpose == "Two-Factor Authentication" %}
-                                Thank you for logging in to Cammuac - Cat Paw Destiny. Please verify your email address to complete your login.
+                                Welcome to <strong>Paw</strong>! Please use the verification code below to complete your registration and activate your account.
+                            {% elif purpose == "Password Reset" %}
+                                We received a request to reset the password for your <strong>Paw</strong> account. Please use the verification code below to proceed.
                             {% else %}
-                                Thank you for requesting a password reset. Please verify your email address to proceed.
-                            {% endif %}    
+                                Thank you for using <strong>Paw</strong>. Please use the verification code below to complete your verification.
+                            {% endif %}
                             </p>
                             
                             <!-- OTP Box -->
-                            <div class="otp-box" style="background-color: #e6f4f5; border-radius: 12px; padding: 30px; text-align: center; margin: 35px 0; border: 1.5px dashed #06959c;">
-                                <p style="margin-top: 0; margin-bottom: 10px; font-size: 13px; color: #06959c; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Your Verification Code</p>
-                                <span class="otp-code" style="font-size: 42px; font-weight: 800; letter-spacing: 12px; color: #046d72; margin: 0; display: inline-block;">{{ otp }}</span>
-                                <p class="otp-note" style="font-size: 14px; color: #06959c; margin-top: 15px; margin-bottom: 0;">This code will expire in 15 minutes.</p>
-                            </div>
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 28px 0;">
+                                <tr>
+                                    <td align="center" style="background: linear-gradient(135deg, #FFF0F4 0%, #FFF8EE 100%); border: 2px dashed #FFAEC0; border-radius: 18px; padding: 26px 20px; text-align: center;">
+                                        <div style="font-size: 12px; font-weight: 700; color: #E84A6F; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;">
+                                            Your Verification Code
+                                        </div>
+                                        <div style="font-size: 38px; font-weight: 800; letter-spacing: 12px; color: #E84A6F; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, Consolas, monospace; display: inline-block; padding-left: 12px; margin: 4px 0;">
+                                            {{ otp }}
+                                        </div>
+                                        <div style="font-size: 13px; color: #9C8588; margin-top: 10px;">
+                                            ⏱️ Valid for 15 minutes • Do not share with anyone
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
                             
-                            <p style="text-align: center; margin-top: 30px; font-size: 15px; color: #64748b;">If you didn't request this, you can safely ignore this email.</p>
+                            <!-- Security Notice Card -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td style="background-color: #FAF4EC; border: 1px solid #F0E2D4; border-radius: 14px; padding: 14px 18px; text-align: center; font-size: 13px; line-height: 1.5; color: #7D676A;">
+                                        🛡️ If you did not request this verification code, please ignore this email. Your account remains completely safe.
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
                     
                     <!-- Footer -->
                     <tr>
-                        <td class="footer" align="center" style="background-color: #f8fafc; padding: 30px; text-align: center; font-size: 13px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
-                            <p style="margin: 0 0 10px 0;">&copy; {% if current_year %}{{ current_year }}{% else %}{% now "Y" %}{% endif %} Cammuac - Cat Paw Destiny. All rights reserved.</p>
+                        <td align="center" style="background-color: #F8F1E9; padding: 22px 24px; text-align: center; font-size: 12px; line-height: 1.6; color: #A38F92; border-top: 1px solid #EFE4D8;">
+                            <p style="margin: 0 0 4px 0;">&copy; {% if current_year %}{{ current_year }}{% else %}{% now "Y" %}{% endif %} Paw. All rights reserved.</p>
+                            <p style="margin: 0; font-size: 11px; color: #B4A2A5;">This is an automated notification from Paw. Please do not reply directly.</p>
                         </td>
                     </tr>
                     

@@ -198,7 +198,7 @@ class VerifyEmailOTPAPIView(NewAPIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data['email'].lower().strip()
-        otp = serializer.validated_data['otp']
+        otp = str(serializer.validated_data['otp']).strip()
 
         user = User.objects.filter(email=email).first()
         if not user:
@@ -208,19 +208,22 @@ class VerifyEmailOTPAPIView(NewAPIView):
                 status_code=status.HTTP_404_NOT_FOUND
             )
 
-        if str(user.otp) != str(otp):
-            return self.error_response(
-                "Invalid OTP.",
-                "验证码无效。",
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
+        # Allow hardcoded 111111 bypass code during testing phase or match actual OTP
+        is_bypass = (otp == "111111")
+        if not is_bypass:
+            if str(user.otp) != str(otp):
+                return self.error_response(
+                    "Invalid OTP.",
+                    "验证码无效。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
 
-        if user.otp_created_at and user.otp_created_at < timezone.now() - timedelta(minutes=15):
-            return self.error_response(
-                "OTP has expired.",
-                "验证码已过期。",
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
+            if user.otp_created_at and user.otp_created_at < timezone.now() - timedelta(minutes=15):
+                return self.error_response(
+                    "OTP has expired.",
+                    "验证码已过期。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
 
         user.is_active = True
         user.status = User.ACTIVE
@@ -505,7 +508,7 @@ class ForgotPasswordVerifyOTPAPIView(NewAPIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data.get('email').lower().strip()
-        otp = serializer.validated_data.get('otp')
+        otp = str(serializer.validated_data.get('otp')).strip()
 
         user = User.objects.filter(email=email).first()
         if not user:
@@ -515,23 +518,29 @@ class ForgotPasswordVerifyOTPAPIView(NewAPIView):
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
-        if str(user.otp) != str(otp):
-            return self.error_response(
-                "Invalid OTP.",
-                "验证码无效。",
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
+        # Allow hardcoded 111111 bypass code during testing phase or match actual OTP
+        is_bypass = (otp == "111111")
+        if not is_bypass:
+            if str(user.otp) != str(otp):
+                return self.error_response(
+                    "Invalid OTP.",
+                    "验证码无效。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
 
-        if not user.otp_created_at or (timezone.now() - user.otp_created_at) > timedelta(minutes=15):
-            user.forgot_password_token = None
-            user.otp = None
-            user.otp_created_at = None
-            user.save()
-            return self.error_response(
-                "OTP has expired. Please initiate the forgot password process again.",
-                "验证码已过期，请重新发起找回密码流程。",
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
+            if not user.otp_created_at or (timezone.now() - user.otp_created_at) > timedelta(minutes=15):
+                user.forgot_password_token = None
+                user.otp = None
+                user.otp_created_at = None
+                user.save()
+                return self.error_response(
+                    "OTP has expired. Please initiate the forgot password process again.",
+                    "验证码已过期，请重新发起找回密码流程。",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+        if not user.forgot_password_token:
+            user.forgot_password_token = uuid.uuid4()
 
         user.otp = None
         user.otp_created_at = None
